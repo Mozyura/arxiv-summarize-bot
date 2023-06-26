@@ -56,7 +56,7 @@ const sendArxivPapers = (async () => {
   //arXivクエリの設定
   const search: ArxivQuery = {
     searchQuery: config.search_word,
-    maxResults: "1",
+    maxResults: "50",
     sortBy: "submittedDate",
     sortOrder: "descending",
   };
@@ -99,7 +99,7 @@ const sendArxivPapers = (async () => {
     
     //もし今日の新着論文がなければ、ないことを伝えて終了
     if (today_papers.length === 0) {
-      sendAllTextChannel("There were no new papers today.", config.channel_id);
+      //sendAllTextChannel("There were no new papers today.", config.channel_id);
       return;
     }
 
@@ -129,7 +129,6 @@ const sendArxivPapers = (async () => {
   }
 });
 
-
 //DiscordBotがきちんと起動したか確認
 client.once(Events.ClientReady, async () => {
   //設定ファイルを読み込み
@@ -145,7 +144,7 @@ client.once(Events.ClientReady, async () => {
 
   console.log('Ready!');
   //所属するチャンネル全てにreadyを送信
-  sendAllTextChannel('Ready!', config.channel_id)
+  //sendAllTextChannel('Ready!', config.channel_id);
   if (client.user) {
     console.log(client.user.tag);
   }
@@ -158,7 +157,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if(command === "flush") {
     await interaction.deferReply();
     await sendArxivPapers();
-    await interaction.editReply("Succcess!");
+    //await interaction.editReply("Succcess!");
   }
 });
 
