@@ -1,8 +1,1 @@
-{
-    "channel_id":[
-        ""
-    ],
-    "search_word": "quant-ph",
-    "model": "gpt-3.5-turbo",
-    "prompt": "次の論文のSummaryを日本語で説明してください\n\n{summary}"
-}
+[]
