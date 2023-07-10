@@ -13,15 +13,19 @@ import { RequiredError } from 'openai/dist/base';
 
 //.envファイルを読み込む
 dotenv.config();
+
+//////////////定数の宣言/////////////////
 const config_path = '../config.json';
 const search_option_name = "論文検索ワード";
 const prompt_option_name = "プロンプト設定";
 const model_option_name = "言語モデル指定";
 const max_option_name = "一回で生成される論文数の上限"
 
+//必要なロールの名前
 const server_manager_name = "server manager";
 const bot_manager_name = "bot manager";
 
+//botのコマンド設定に必要なデータ
 const command_data = [
   {
     name: "status",
@@ -29,93 +33,93 @@ const command_data = [
   },
   {
     name: "run",
-    description: "17時でなくても即座に論文が要約されます(動作確認用コマンド)",
+    description: "要bot manager：17時でなくても即座に論文が要約されます(動作確認用コマンド)",
   },
   {
     name: "setwords",
-    description: "論文検索ワードを設定します",
+    description: "要server manager：論文検索ワードを設定します",
     options: [
       {
         type: 3,
         name: search_option_name,
         description: "追加したい論文検索ワードを半角カンマ(,)区切りで入力してください",
         required: true,
-        //max_length: 300
+        max_length: 300
       }
     ]
   },
   {
     name: "setprompt",
-    description: "ChatGPTへ投稿する内容を調整できます",
+    description: "要server manager：ChatGPTへ投稿する内容を調整できます",
     options: [
       {
         type: 3,
         name: prompt_option_name,
         description: "ChatGPTへ投稿する内容を調整できます ただし論文概要を埋め込む箇所に{summary}を入れてください",
         require: true,
-        //max_length: 3000
+        max_length: 3000
       }
     ]
   },
   {
     name: "setmodel",
-    description: "モデルを設定できます ただしbot managerの権限が必要です",
+    description: "要bot manager：モデルを設定できます",
     options: [
       {
         type: 3,
         name: model_option_name,
         description: "適切なChatGPTのモデル名を入力してください",
         require: true,
-        //max_length: 3000
+        max_length: 3000
       }
     ]
   },
   {
     name: "setmax",
-    description: "一日に生成される論文要約の上限を設定できます",
+    description: "要bot manager：一日に生成される論文要約の上限を設定できます",
     options: [
       {
         type: 4,
         name: max_option_name,
         description: "上限を正の整数で入力してください",
         require: true,
-        //min_value: 1,
-        //max_value: 200
+        min_value: 1,
+        max_value: 200
       }
     ]
   },
   {
     name: "channelinit",
-    description: "このチャンネルをbotに追加します",
+    description: "要bot manager：このチャンネルをbotに追加します",
     options: [
       {
         type: 3,
         name: search_option_name,
         description: "追加したい論文検索ワードを半角カンマ(,)区切りで入力してください",
         required: true,
-        //max_length: 300
+        max_length: 300
       },
       {
         type: 3,
         name: prompt_option_name,
         description: "ChatGPTへ投稿する内容を調整できます ただし論文概要を埋め込む箇所に{summary}を入れてください",
         require: true,
-        //max_length: 3000
+        max_length: 3000
       },
       {
         type: 3,
         name: model_option_name,
         description: "適切なChatGPTのモデル名を入力してください",
         require: true,
-        //max_length: 3000
+        max_length: 3000
       },
       {
         type: 4,
         name: max_option_name,
         description: "上限を正の整数で入力してください",
         require: true,
-        //min_value: 1,
-        //max_value: 200
+        min_value: 1,
+        max_value: 200
       }
     ]
   },
@@ -276,8 +280,11 @@ client.on(Events.InteractionCreate, async interaction => {
     return;
   }
   const command = interaction.commandName;
+  const config: ChannelSetting[] = require(config_path);
+  const index = config.findIndex(setting => setting.channel_id === interaction.channelId);
 
   if (command === command_data[0].name) {
+    //検索ワードを何もないときに合わせて整形するための関数
     const formatSearchWord = (s_words: string[]): string => {
       if (s_words.length === 0) {
         return "論文検索ワードが登録されていません";
@@ -286,7 +293,6 @@ client.on(Events.InteractionCreate, async interaction => {
       }
     }
 
-    const config: ChannelSetting[] = require(config_path);
     const ch_setting = config.find(ch => ch.channel_id === interaction.channelId);
     if (ch_setting === undefined) {
       interaction.reply("チャンネルIDがBOTに登録されていません。BOTが使用できるチャンネルを間違えていないか確認してください。");
@@ -324,32 +330,28 @@ client.on(Events.InteractionCreate, async interaction => {
     if (roles.has(server_manager.id)) {
       if (command === command_data[2].name) {
         await interaction.deferReply();
-        const confg: ChannelSetting[] = require(config_path);
         const words = interaction.options.data[0].value?.toString().split(",");
 
-        if (words === undefined || words.length === 0) {
+        if (words === undefined || words.length === 0 || index === -1) {
           interaction.editReply("入力が正常に行われませんでした");
           return;
         } else {
-          const index = confg.findIndex(setting => setting.channel_id === interaction.channelId);
-          confg[index].search_words = words;
-          await writeConfigFile(confg);
+          config[index].search_words = words;
+          await writeConfigFile(config);
 
           interaction.editReply("検索ワードが更新されました");
           return;
         }
       } else if (command === command_data[3].name) {
         await interaction.deferReply();
-        const confg: ChannelSetting[] = require(config_path);
         const prompt = interaction.options.data[0].value?.toString();
 
-        if (prompt === undefined) {
+        if (prompt === undefined || index === -1) {
           interaction.editReply("入力が正常に行われませんでした");
           return;
         } else {
-          const index = confg.findIndex(setting => setting.channel_id === interaction.channelId);
-          confg[index].prompt = prompt;
-          await writeConfigFile(confg);
+          config[index].prompt = prompt;
+          await writeConfigFile(config);
 
           interaction.editReply("プロンプトが更新されました");
           return;
@@ -361,7 +363,6 @@ client.on(Events.InteractionCreate, async interaction => {
     if (roles.has(bot_manager.id)) {
       if (command === command_data[1].name) {
         await interaction.deferReply();
-        const config: ChannelSetting[] = require(config_path);
         const ch_setting = config.find(ch => ch.channel_id === interaction.channelId);
         if (ch_setting === undefined) {
           await interaction.reply("チャンネルIDがbotに登録されていません。必要ならbot管理者に問い合わせてください。");
@@ -377,30 +378,26 @@ client.on(Events.InteractionCreate, async interaction => {
       }
       else if (command === command_data[4].name) {
         await interaction.deferReply();
-        const confg: ChannelSetting[] = require(config_path);
         const model = interaction.options.data[0].value?.toString();
 
-        if (model === undefined || model.length === 0) {
+        if (model === undefined || model.length === 0 || index === -1) {
           interaction.editReply("入力が正常に行われませんでした");
           return;
         } else {
-          const index = confg.findIndex(setting => setting.channel_id === interaction.channelId);
-          confg[index].model = model;
-          await writeConfigFile(confg);
+          config[index].model = model;
+          await writeConfigFile(config);
 
           interaction.editReply("ChatGPTのモデルが更新されました");
           return;
         }
       } else if (command === command_data[5].name) {
         await interaction.deferReply();
-        const config: ChannelSetting[] = require(config_path);
         const max = interaction.options.data[0].value as number;
 
-        if (max === undefined || max < 1) {
+        if (max === undefined || max < 1 || index === -1) {
           interaction.editReply("入力が正常に行われませんでした");
           return;
         } else {
-          const index = config.findIndex(setting => setting.channel_id === interaction.channelId);
           config[index].max = max;
           await writeConfigFile(config);
 
@@ -409,7 +406,6 @@ client.on(Events.InteractionCreate, async interaction => {
         }
       } else if (command === command_data[6].name) {
         await interaction.deferReply();
-        const config: ChannelSetting[] = require(config_path);
         if (config.find(conf => conf.channel_id === interaction.channelId) !== undefined) {
           interaction.editReply("このチャンネルは既に登録されています");
           return;
@@ -449,7 +445,7 @@ client.on(Events.InteractionCreate, async interaction => {
       }
     }
 
-    interaction.editReply("指定されたコマンドは無効です コマンド名が誤っているか，権限がないと思われます");
+    interaction.reply("指定されたコマンドは無効です コマンド名が誤っているか，必要な権限がないと思われます");
     return;
   }
 });
