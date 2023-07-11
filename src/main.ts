@@ -163,7 +163,7 @@ const getArxivPapers = (async (search_word: string) => {
   //arXivクエリの設定
   const search: ArxivQuery = {
     searchQuery: search_word,
-    maxResults: "10",
+    maxResults: "30",
     sortBy: "submittedDate",
     sortOrder: "descending",
   };
@@ -299,7 +299,7 @@ client.on(Events.InteractionCreate, async interaction => {
         + `一日の最大論文投稿数：${ch_setting.max}\n`
         + `ChatGPTに投稿する文章のフォーマット\n${ch_setting.prompt}\n`
         + `ChatGPTのモデル：${ch_setting.model}`;
-      interaction.reply(message);
+      await interaction.reply(message);
       return;
     }
   }
@@ -307,19 +307,19 @@ client.on(Events.InteractionCreate, async interaction => {
     //コマンドをロールで制限するために必要な宣言と処理
     const guild = interaction.guild;
     if (guild === null) {
-      interaction.reply('guildがnullでした bot管理者に問い合わせてください');
+      await interaction.reply('guildがnullでした bot管理者に問い合わせてください');
       return;
     }
     const user = guild.members.cache.get(interaction.user.id) as GuildMember;
     const roles = user.roles.cache;
     const server_manager = guild.roles.cache.find(role => role.name === server_manager_name);
     if (server_manager === undefined) {
-      interaction.reply(`${server_manager_name}のロールが設定されていません このコマンドはロールを設定してから使用できます`);
+      await interaction.reply(`${server_manager_name}のロールが設定されていません このコマンドはロールを設定してから使用できます`);
       return;
     }
     const bot_manager = guild.roles.cache.find(role => role.name === bot_manager_name);
     if (bot_manager === undefined) {
-      interaction.reply(`${bot_manager_name}のロールが設定されていません このコマンドはロールを設定してから使用できます`);
+      await interaction.reply(`${bot_manager_name}のロールが設定されていません このコマンドはロールを設定してから使用できます`);
       return;
     }
 
@@ -362,14 +362,14 @@ client.on(Events.InteractionCreate, async interaction => {
         await interaction.deferReply();
         const ch_setting = config.find(ch => ch.channel_id === interaction.channelId);
         if (ch_setting === undefined) {
-          await interaction.reply("チャンネルIDがbotに登録されていません。必要ならbot管理者に問い合わせてください。");
+          await interaction.editReply("チャンネルIDがbotに登録されていません。必要ならbot管理者に問い合わせてください。");
           return;
         } else {
           const messages = await getChannelMessage(ch_setting);
-          await Promise.all(messages.map(async msg => {
-            await interaction.editReply(msg);
-          }));
-          await interaction.editReply("Finished");
+          await interaction.editReply('今日の新着論文です');
+          for(const msg of messages){
+            interaction.followUp(msg);
+          }
           return;
         }
       }
@@ -378,13 +378,13 @@ client.on(Events.InteractionCreate, async interaction => {
         const model = interaction.options.data[0].value?.toString();
 
         if (model === undefined || model.length === 0 || index === -1) {
-          interaction.editReply("入力が正常に行われませんでした");
+          await interaction.editReply("入力が正常に行われませんでした");
           return;
         } else {
           config[index].model = model;
           await writeConfigFile(config);
 
-          interaction.editReply("ChatGPTのモデルが更新されました");
+          await interaction.editReply("ChatGPTのモデルが更新されました");
           return;
         }
       } else if (command === command_data[5].name) {
@@ -392,40 +392,40 @@ client.on(Events.InteractionCreate, async interaction => {
         const max = interaction.options.data[0].value as number;
 
         if (max === undefined || max < 1 || index === -1) {
-          interaction.editReply("入力が正常に行われませんでした");
+          await interaction.editReply("入力が正常に行われませんでした");
           return;
         } else {
           config[index].max = max;
           await writeConfigFile(config);
 
-          interaction.editReply("一日の論文要約量の上限が更新されました");
+          await interaction.editReply("一日の論文要約量の上限が更新されました");
           return;
         }
       } else if (command === command_data[6].name) {
         await interaction.deferReply();
         if (config.find(conf => conf.channel_id === interaction.channelId) !== undefined) {
-          interaction.editReply("このチャンネルは既に登録されています");
+          await interaction.editReply("このチャンネルは既に登録されています");
           return;
         }
 
         const words = interaction.options.get(search_option_name)?.value?.toString().split(",");
         if (words === undefined || words.length === 0) {
-          interaction.editReply("入力が正常に行われませんでした");
+          await interaction.editReply("入力が正常に行われませんでした");
           return;
         }
         const prompt = interaction.options.get(prompt_option_name)?.value?.toString();
         if (prompt === undefined) {
-          interaction.editReply("入力が正常に行われませんでした");
+          await interaction.editReply("入力が正常に行われませんでした");
           return;
         }
         const model = interaction.options.get(model_option_name)?.value?.toString();
         if (model === undefined || model.length === 0) {
-          interaction.editReply("入力が正常に行われませんでした");
+          await interaction.editReply("入力が正常に行われませんでした");
           return;
         }
         const max = interaction.options.get(max_option_name)?.value as number;
         if (max === undefined || max < 1) {
-          interaction.editReply("入力が正常に行われませんでした");
+          await interaction.editReply("入力が正常に行われませんでした");
           return;
         }
 
@@ -437,7 +437,7 @@ client.on(Events.InteractionCreate, async interaction => {
           max: max,
         });
         await writeConfigFile(config);
-        interaction.editReply("このチャンネルが登録されました");
+        await interaction.editReply("このチャンネルが登録されました");
         return;
       }
     }
