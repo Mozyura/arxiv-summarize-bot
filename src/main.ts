@@ -256,9 +256,6 @@ const getEachChannelMessage = async (channel_setting: ChannelSetting[]) => {
 
 //DiscordBotがきちんと起動したか確認
 client.once(Events.ClientReady, async () => {
-  //設定ファイルを読み込み
-  let config: ChannelSetting[] = require(config_path);
-
   await client.application?.commands.set(command_data);
 
   console.log('Ready!');
@@ -280,7 +277,7 @@ client.on(Events.InteractionCreate, async interaction => {
     return;
   }
   const command = interaction.commandName;
-  const config: ChannelSetting[] = require(config_path);
+  const config: ChannelSetting[] = JSON.parse(fs.readFileSync(config_path,'utf-8'));
   const index = config.findIndex(setting => setting.channel_id === interaction.channelId);
 
   if (command === command_data[0].name) {
@@ -452,7 +449,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
 //毎日17時に投稿するように設定
 cron.schedule('0 0 17 * * *', async () => {
-  const config: ChannelSetting[] = require(config_path);
+  const config: ChannelSetting[] = JSON.parse(fs.readFileSync(config_path,'utf-8'));
   const channel_messages = await getEachChannelMessage(config);
 
   await Promise.all(channel_messages.map(async c_msg => {
