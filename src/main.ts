@@ -15,7 +15,7 @@ import { RequiredError } from 'openai/dist/base';
 dotenv.config();
 
 //////////////定数の宣言/////////////////
-const config_path = '../config.json';
+const config_path = './config.json';
 const search_option_name = "論文検索ワード";
 const prompt_option_name = "プロンプト設定";
 const model_option_name = "言語モデル指定";
