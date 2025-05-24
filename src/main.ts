@@ -254,7 +254,6 @@ const getEachChannelMessage = async (channel_setting: ChannelSetting[]) => {
   })));
 }
 
-//DiscordBotがきちんと起動したか確認
 client.once(Events.ClientReady, async () => {
   await client.application?.commands.set(command_data);
 
@@ -460,5 +459,4 @@ cron.schedule('0 0 17 * * *', async () => {
   }));
 });
 
-//ボット作成時のトークンでDiscordと接続
 client.login(process.env.BOT_TOKEN);
