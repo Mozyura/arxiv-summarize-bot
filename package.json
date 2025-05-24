@@ -1,7 +1,7 @@
 {
   "name": "arxiv-summarize-bot",
   "version": "1.0.0",
-  "description": "",
+  "description": "arXiv新着論文通知Discord Bot",
   "main": "build/main.js",
   "scripts": {
     "test": "ts-node src/main.ts",
@@ -9,8 +9,8 @@
     "compile": "tsc -p ."
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Mozyura (mozyura0810@gmail.com)",
+  "license": "MIT",
   "dependencies": {
     "@types/node-cron": "^3.0.7",
     "axios": "^1.4.0",
